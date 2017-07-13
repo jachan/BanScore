@@ -9,6 +9,8 @@ from bs4 import BeautifulSoup
 import re
 #allows us to print out today's date
 from datetime import date
+#allows us to make relative filepaths
+import os
 
 #function returns a string with the current date
 def todayStr():
@@ -62,7 +64,9 @@ def generateBans(options):
     data.sort(key=metric, reverse = True)
 
     #opens a file for printing
-    file = open("/Users/johnchan/Desktop/banlists/" + options["league"].title() + " " + todayStr() + ".txt","w")
+    dir = os.path.dirname(__file__)
+    filename = os.path.join(dir, "banlists/" + options["league"].title() + " " + todayStr() + ".txt")
+    file = open(filename,"w")
 
     #prints out the champions with the highest win metric
     lineNum = 1
