@@ -29,8 +29,8 @@ def grabNum(in_):
 def metric(dict):
     patchLength = date.today() - lastUpdate
     patchLength = patchLength.days
-    #designed to be 0.5 as meta is new, then 1 when meta is 2 weeks old
-    scaleFactor = patchLength*0.036+0.5
+    #designed to be 0.25 as meta is new, then 1 when meta is 2 weeks old
+    scaleFactor = patchLength*0.053+0.25
     if scaleFactor > 1:
         scaleFactor = 1
     return dict["winRate"] + dict["banRate"]*scaleFactor
@@ -60,6 +60,7 @@ def generateBans(options):
             #if the webpage cannot be found for the champion (cough cough kayn update)
             if not champString:
                 print("Error loading data for " + champ)
+                banRate = 0
             #grabs the banrate for the champ from the HTML
             else:
                 banRate = champString[0].find("b").string
