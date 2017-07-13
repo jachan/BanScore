@@ -7,10 +7,13 @@ import requests
 from bs4 import BeautifulSoup
 #allows us to use regexes
 import re
-#allows us to print out today's date
+#allows us to print out today's date and compare it to other dates
 from datetime import date
 #allows us to make relative filepaths
 import os
+
+#used for scaling banRate
+lastUpdate = date(2017,7,12)
 
 #function returns a string with the current date
 def todayStr():
@@ -24,7 +27,13 @@ def grabNum(in_):
 
 #function takes in individual champion data and calculates a win metric
 def metric(dict):
-    return dict["winRate"] + dict["banRate"]
+    patchLength = date.today() - lastUpdate
+    patchLength = patchLength.days
+    #designed to be 0.5 as meta is new, then 1 when meta is 2 weeks old
+    scaleFactor = patchLength*0.036+0.5
+    if scaleFactor > 1:
+        scaleFactor = 1
+    return dict["winRate"] + dict["banRate"]*scaleFactor
 
 #function that takes as input the formData and outputs the banlist
 def generateBans(options):
@@ -51,6 +60,7 @@ def generateBans(options):
             #if the webpage cannot be found for the champion (cough cough kayn update)
             if not champString:
                 print("Error loading data for " + champ)
+            #grabs the banrate for the champ from the HTML
             else:
                 banRate = champString[0].find("b").string
         data.append(dict(
@@ -79,7 +89,7 @@ def generateBans(options):
         secondSpacer = 13 - len(middle)
         file.write(front + " " * firstSpacer + middle + " " * secondSpacer + end + "\n")
         lineNum = lineNum + 1
-    file.write("\nGenerated with data from " + options["period"] + " using (winrate+banrate) on " + todayStr())
+    file.write("\nGenerated with data from " + options["period"] + " using (winrate+(banrate*patchLength)) on " + todayStr())
     file.close()
 
 
