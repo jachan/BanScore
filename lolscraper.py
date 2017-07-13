@@ -80,14 +80,16 @@ def generateBans(options):
 
     #prints out the champions with the highest win metric
     lineNum = 1
-    file.write("Who to ban in " + options["league"].title() + " on " + todayStr() + "\n\n   Champ" + 12*" " + "BanScore" + 5* " " + "Ban Rate\n")
+    file.write("Who to ban in " + options["league"].title() + " on " + todayStr() + "\n\n   Champ" + 12*" " + "BanScore" + 5* " " + "Ban Rate" + 5*" " + "Win Rate\n")
     for record in data:
-        front = str(lineNum) + ": " + record["champ"]
-        middle = str(metric(record))[:5]
-        end = str(record["banRate"])[:5]
-        firstSpacer = 20 - len(front)
-        secondSpacer = 13 - len(middle)
-        file.write(front + " " * firstSpacer + middle + " " * secondSpacer + end + "\n")
+        frontString = str(lineNum) + ": " + record["champ"]
+        metricString = str(metric(record))[:5]
+        banString = str(record["banRate"])[:5]
+        winrateString = str(record["winRate"])[:5]
+        firstSpacer = " " * (20 - len(frontString))
+        secondSpacer = " " * (13 - len(metricString))
+        thirdSpacer = " " * (13 - len(banString))
+        file.write(frontString + firstSpacer + metricString + secondSpacer + banString + thirdSpacer + winrateString + "\n")
         lineNum = lineNum + 1
     file.write("\nGenerated with data from " + options["period"] + " using (winrate+(banrate*patchLength)) on " + todayStr())
     file.close()
