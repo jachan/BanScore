@@ -1,15 +1,28 @@
 import requests
 import json
+import datetime
 
 file = open("./apiKey.txt", "r")
 apiKey = file.read().strip()
 file.close()
 
 def main(startingName, k):
-    masterPlayerList = getIDs(startingName)
+    idSet = set()
+    masterPlayerList = []
+
+    newIDs = getIDs(startingName)
+    idSet.update(newIDs)
+    while len(masterPlayerList) < k:
+        newPlayers = makeRecords(newIDs)
+        masterPlayerList.extend(newPlayers)
+        newIDs, games = getMatches(newPlayers)
+        idSet.update(newIDs)
 
 def api(method, url, data):
     r = requests.request(method, url.format(**data), headers = {"X-Riot-Token" : apiKey})
+    #remember the last time a request was made, and wait to make another request
+    #riot rate limit: 20/sec, 100/2min
+    time.sleep(0.75)
     return r.json()
 
 def getIDs(startingName):
@@ -25,11 +38,21 @@ def getIDs(startingName):
         if leagueData["queue"] == "RANKED_SOLO_5x5":
             entries = leagueData["entries"]
     for playerData in entries:
-        #summonerIDs
+        #adds summonerIDs to the master list of players found
         playersFound.add(playerData["playerOrTeamId"])
     return playersFound
 
-def make
+counter = 0;
+def makeRecords(summonerIDs):
+    playerList = []
+    for summonerID in summonerIDs:
+        sumLookupStub = 'https://na1.api.riotgames.com/lol/summoner/v3/summoners/{summonerID}'
+        sumRequest = api("get", nameLookupStub, dict(summonerID=summonerID))
+        playerInfo = ict(name = sumRequest["name"], summonerID = sumRequest["id"], accountID = sumRequest["accountId"])
+        playerList.append(playerInfo)
+        if counter%50:
+            print(counter)
+        counter+=1
+    return playerList
 
-main("rebelliousdino")
-#getKIDs("Little Pengweng")
+main("rebelliousdino", 1000)
