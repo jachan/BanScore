@@ -33,7 +33,7 @@ def metric(dict):
     scaleFactor = patchLength*0.053+0.25
     if scaleFactor > 1:
         scaleFactor = 1
-    return dict["winRate"] + dict["banRate"]*scaleFactor
+    return dict["winRate"]
 
 #function that takes as input the formData and outputs the banlist
 def generateBans(options):
@@ -92,7 +92,7 @@ def generateBans(options):
         thirdSpacer = " " * (13 - len(banString))
         file.write(frontString + firstSpacer + metricString + secondSpacer + banString + thirdSpacer + winrateString + "\n")
         lineNum = lineNum + 1
-    file.write("\nGenerated with data from " + options["period"] + " using (winrate+(banrate*patchLength)) on " + todayStr())
+    file.write("\nGenerated with data from " + options["period"] + " using winrate on " + todayStr())
     file.close()
 
 
