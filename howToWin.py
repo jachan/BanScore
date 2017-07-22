@@ -1,6 +1,11 @@
 import datetime
 import requests
+import json
+import datetime
+import time
 
+#grabs api key from local text file
+#if you're reading this, then I'm glad I kept the apikey local ;)
 file = open("./apiKey.txt", "r")
 apiKey = file.read().strip()
 file.close()
@@ -8,13 +13,31 @@ file.close()
 patch_date = datetime.datetime(2017, 7, 12, 0, 0, 0)
 epoch = datetime.datetime(1970, 1, 1)
 
+#starts from a starting name, then grabs all players in that league and examines their games
+#it then looks for summoners they have played with, and gets the summoner ids, account ids, and summoner names of those players
+#the account ids of players are used to look up their games
 def main(startingName, k):
-    masterPlayerList = getIDs(startingName)
+    #idSet holds all the summonerIDs processed
+    idSet = set()
+    #master player list contains a series of dicts that have summoner ids, account ids, and summoner names
+    masterPlayerList = []
+
+    newIDs = getIDs(startingName)
+    idSet.update(newIDs)
+    while len(masterPlayerList) < k:
+        print("analyzing new batch of players")
+        newPlayers = makeRecords(newIDs)
+        masterPlayerList.extend(newPlayers)
+        newIDs, games = getMatches(newPlayers)
+        newIDs = newIDs - idSet
+        idSet.update(newIDs)
 
 def api(method, path, data):
     url = 'https://na1.api.riotgames.com' + path
-    print(url.format(**data))
     r = requests.request(method, url.format(**data), headers = {"X-Riot-Token" : apiKey})
+    #remember the last time a request was made, and wait to make another request
+    #riot rate limit: 20/sec, 100/2min
+    time.sleep(0.75)
     return r.json()
 
 def getIDs(startingName):
@@ -30,7 +53,7 @@ def getIDs(startingName):
         if leagueData["queue"] == "RANKED_SOLO_5x5":
             entries = leagueData["entries"]
     for playerData in entries:
-        #summonerIDs
+        #adds summonerIDs to the master list of players found
         playersFound.add(playerData["playerOrTeamId"])
     return playersFound
 
@@ -39,16 +62,26 @@ def get_matches(accountId):
     beginTime = int((patch_date - epoch).total_seconds() * 1e3)
     url = '/lol/match/v3/matchlists/by-account/{accountId}?beginTime={beginTime}'
     matchlist = api('get', url, locals())
-    return matchlist['matches']
+    games = []
+    for match in matchlist['matches']:
+        games.append(match['gameId'])
+    return games
 
-def get_summoner(summonerId):
-    # https://developer.riotgames.com/api-methods/#summoner-v3/GET_getBySummonerId
-    url = '/lol/summoner/v3/summoners/{summonerId}'
-    summoner = api('get', url, locals())
-    return summoner
+counter = 0;
+def makeRecords(summonerIDs):
+    global counter
+    playerList = []
+    for summonerID in summonerIDs:
+        sumLookupStub = '/lol/summoner/v3/summoners/{summonerID}'
+        sumRequest = api("get", sumLookupStub, dict(summonerID=summonerID))
+        playerInfo = dict(name = sumRequest["name"], summonerID = sumRequest["id"], accountID = sumRequest["accountId"])
+        playerList.append(playerInfo)
+        if counter%50:
+            print("players analyzed: " + counter)
+        counter+=1
+    return playerList
 
-#main("rebelliousdino")
-#getKIDs("Little Pengweng")
-print(get_summoner(42776211))
-import random
-print('\n'.join(map(str, random.sample(get_matches(205328703), 10))))
+#main("rebelliousdino", 1000)
+r = api('get', '/lol/summoner/v3/summoners/by-name/{summonerName}', dict(summonerName='rebelliousdino'))
+accountId = r['accountId']
+print(get_matches(accountId))
