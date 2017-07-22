@@ -2,20 +2,29 @@ import requests
 import json
 import datetime
 
+#grabs api key from local text file
+#if you're reading this, then I'm glad I kept the apikey local ;)
 file = open("./apiKey.txt", "r")
 apiKey = file.read().strip()
 file.close()
 
+#starts from a starting name, then grabs all players in that league and examines their games
+#it then looks for summoners they have played with, and gets the summoner ids, account ids, and summoner names of those players
+#the account ids of players are used to look up their games
 def main(startingName, k):
+    #idSet holds all the summonerIDs processed
     idSet = set()
+    #master player list contains a series of dicts that have summoner ids, account ids, and summoner names
     masterPlayerList = []
 
     newIDs = getIDs(startingName)
     idSet.update(newIDs)
     while len(masterPlayerList) < k:
+        print("analyzing new batch of players")
         newPlayers = makeRecords(newIDs)
         masterPlayerList.extend(newPlayers)
         newIDs, games = getMatches(newPlayers)
+        newIDs = newIDs - idSet
         idSet.update(newIDs)
 
 def api(method, url, data):
@@ -51,7 +60,7 @@ def makeRecords(summonerIDs):
         playerInfo = ict(name = sumRequest["name"], summonerID = sumRequest["id"], accountID = sumRequest["accountId"])
         playerList.append(playerInfo)
         if counter%50:
-            print(counter)
+            print("players analyzed: " + counter)
         counter+=1
     return playerList
 
